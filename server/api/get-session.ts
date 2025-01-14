@@ -5,6 +5,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 export default defineEventHandler(async (event) => {
   try {
     const query = getQuery(event);
+
     const sessionId = query.session_id as string;
 
     if (!sessionId) {

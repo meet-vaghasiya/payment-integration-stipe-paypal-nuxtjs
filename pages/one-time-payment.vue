@@ -18,7 +18,6 @@
       @stripe-checkout="checkoutWithStripe"
       @custom-checkout="showCustomCheckout = true"
     />
-    <h1>{{ cardName + 'ppp' }}</h1>
     <CheckoutModal
       v-model:show="showCustomCheckout"
       v-model:cardName="cardName"
@@ -44,7 +43,8 @@ const checkoutModalRef = ref(null);
 const showCustomCheckout = ref(false);
 const processing = ref(false);
 const cardName = ref('');
-const email = ref('');
+const userStore = useUserStore();
+const email = ref(userStore.selectedUser.email);
 
 const {
   cardError,
