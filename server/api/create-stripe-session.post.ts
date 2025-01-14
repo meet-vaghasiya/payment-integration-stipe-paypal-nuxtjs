@@ -1,10 +1,12 @@
 import Stripe from 'stripe';
+import { getCurrentUser } from '~/utils/users';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 
 export default defineEventHandler(async (event) => {
   try {
     const body = await readBody(event);
+    const authUser = event.context.auth;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -21,12 +23,11 @@ export default defineEventHandler(async (event) => {
       mode: 'payment',
       success_url: `${process.env.APP_URL}/order-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.APP_URL}/one-time-payment`,
-      customer_email: 'asdfdsftest@test.com',
+      customer_email: authUser.email,
       phone_number_collection: {
         enabled: true,
       },
     });
-    console.log(session);
 
     return { url: session.url };
   } catch (error: any) {

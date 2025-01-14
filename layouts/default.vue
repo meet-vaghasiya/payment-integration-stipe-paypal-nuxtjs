@@ -1,7 +1,7 @@
 <template>
+  <Header />
   <div class="flex">
-    <aside class="w-1/4 min-h-svh p-4 bg-green-300">
-      <h2 class="font-bold text-lg">Menu</h2>
+    <aside class="w-1/4 min-h-svh p-4 bg-blue-200">
       <ul>
         <li v-for="(item, index) in menuItems" :key="index" class="py-2">
           <NuxtLink :to="item.link">{{ item.title }}</NuxtLink>
