@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
       payment_method_types: ['card'],
       line_items: body.items.map((item: any) => ({
         price_data: {
-          currency: body.currency,
+          currency: 'usd',
           product_data: {
             name: item.title,
           },
@@ -21,8 +21,12 @@ export default defineEventHandler(async (event) => {
       mode: 'payment',
       success_url: `${process.env.APP_URL}/order-success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.APP_URL}/one-time-payment`,
-      customer_email: 'test@test.com',
+      customer_email: 'asdfdsftest@test.com',
+      phone_number_collection: {
+        enabled: true,
+      },
     });
+    console.log(session);
 
     return { url: session.url };
   } catch (error: any) {
