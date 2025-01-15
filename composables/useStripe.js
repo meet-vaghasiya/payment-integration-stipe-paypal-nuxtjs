@@ -5,6 +5,7 @@ export function useStripe() {
   const stripe = ref(null);
   const elements = ref(null);
   const cardError = ref('');
+  const clientSecret = ref('');
 
   const initializeStripe = async (cardElement) => {
     stripe.value = await loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
@@ -31,8 +32,12 @@ export function useStripe() {
     return data.value;
   };
 
-  const confirmPayment = async (clientSecret, paymentMethod) => {
-    return await stripe.value.confirmCardPayment(clientSecret, {
+  const setClientSecret = (secret) => {
+    clientSecret.value = secret;
+  };
+
+  const confirmPayment = async (paymentMethod) => {
+    return await stripe.value.confirmCardPayment(clientSecret.value, {
       payment_method: paymentMethod,
     });
   };
@@ -44,5 +49,6 @@ export function useStripe() {
     initializeStripe,
     createPaymentIntent,
     confirmPayment,
+    setClientSecret,
   };
 }

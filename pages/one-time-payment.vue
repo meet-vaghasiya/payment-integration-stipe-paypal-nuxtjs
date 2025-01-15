@@ -16,7 +16,7 @@
       :items="cartItems"
       :total="total"
       @stripe-checkout="checkoutWithStripe"
-      @custom-checkout="showCustomCheckout = true"
+      @custom-checkout="handleCustomCheckout"
     />
     <CheckoutModal
       v-model:show="showCustomCheckout"
@@ -52,6 +52,7 @@ const {
   createPaymentIntent,
   confirmPayment,
   elements,
+  setClientSecret,
 } = useStripe();
 
 // Products and Cart Logic
@@ -80,11 +81,6 @@ const decreaseQuantity = (product) => {
   if (product.quantity > 0) product.quantity--;
 };
 
-watch(checkoutModalRef, async () => {
-  checkoutModalRef.value?.cardElementRef &&
-    (await initializeStripe(checkoutModalRef.value.cardElementRef));
-});
-
 const checkoutWithStripe = async () => {
   if (total.value <= 0) return;
 
@@ -111,27 +107,30 @@ const checkoutWithStripe = async () => {
   }
 };
 
+const handleCustomCheckout = async () => {
+  // create payment intent
+  const paymentIntent = await createPaymentIntent(total.value, email.value);
+  if (!paymentIntent?.clientSecret) {
+    throw new Error('Failed to create payment intent');
+  }
+  setClientSecret(paymentIntent.clientSecret);
+  showCustomCheckout.value = true;
+  await nextTick();
+  await initializeStripe(checkoutModalRef.value.cardElementRef);
+};
+
 const processCustomCheckout = async () => {
   if (processing.value) return;
 
   processing.value = true;
   try {
-    const paymentIntent = await createPaymentIntent(total.value, email.value);
-
-    if (!paymentIntent?.clientSecret) {
-      throw new Error('Failed to create payment intent');
-    }
-
-    const { error, paymentIntent: confirmedPayment } = await confirmPayment(
-      paymentIntent.clientSecret,
-      {
-        card: elements.value.getElement('card'),
-        billing_details: {
-          name: cardName.value,
-          email: email.value,
-        },
-      }
-    );
+    const { error, paymentIntent: confirmedPayment } = await confirmPayment({
+      card: elements.value.getElement('card'),
+      billing_details: {
+        name: cardName.value,
+        email: email.value,
+      },
+    });
 
     if (error) throw new Error(error.message);
     if (confirmedPayment.status === 'succeeded') {
