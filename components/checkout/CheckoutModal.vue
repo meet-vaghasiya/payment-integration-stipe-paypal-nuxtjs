@@ -1,37 +1,18 @@
 <template>
   <div
-    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center overflow-auto"
   >
     <div class="bg-white p-6 rounded-lg w-full max-w-md">
       <h2 class="text-xl font-semibold mb-4">Checkout</h2>
       <form @submit.prevent="emit('submit')">
         <div class="mb-4">
-          <label class="block text-sm font-medium mb-1">Card Number</label>
-          <div ref="cardElementRef" class="p-3 border rounded"></div>
+          <div ref="cardElementRef" class="p-3"></div>
+          <p class="text-lg">Custom Address</p>
+          <div ref="addressElementRef"></div>
+          <div class="flex gap-4"></div>
           <p v-if="error" class="mt-1 text-red-500 text-sm">
             {{ error }}
           </p>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <label class="block text-sm font-medium mb-1">Name on Card</label>
-            <input
-              v-model="cardName"
-              type="text"
-              class="w-full p-2 border rounded"
-              required
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1">Email</label>
-            <input
-              v-model="email"
-              type="email"
-              class="w-full p-2 border rounded"
-              required
-            />
-          </div>
         </div>
 
         <div class="flex justify-end gap-4">
@@ -73,8 +54,9 @@ const emit = defineEmits([
 ]);
 
 const cardElementRef = ref(null);
+const addressElementRef = ref(null);
 const cardName = useVModel(props, 'cardName', emit);
 const email = useVModel(props, 'email', emit);
 
-defineExpose({ cardElementRef });
+defineExpose({ cardElementRef, addressElementRef });
 </script>

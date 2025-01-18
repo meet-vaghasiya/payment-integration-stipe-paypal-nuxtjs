@@ -7,11 +7,12 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event);
 
     const paymentIntent = await stripe.paymentIntents.create({
+      payment_method_types: ['card'], // This will remove all other payment method which are getting via create elements
       amount: body.amount,
       currency: body.currency,
       receipt_email: body.email,
       automatic_payment_methods: {
-        enabled: true,
+        enabled: false,
       },
     });
 

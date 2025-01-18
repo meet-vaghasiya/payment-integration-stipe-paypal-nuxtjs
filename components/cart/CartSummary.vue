@@ -24,6 +24,16 @@
       >
         Custom Checkout
       </button>
+      <button
+        class="flex-1 mt-4 bg-blue-200 text-black py-2 px-4 rounded hover:bg-blue-100"
+      >
+        Creating seprate components
+      </button>
+      <button
+        class="flex-1 mt-4 bg-blue-200 text-black py-2 px-4 rounded hover:bg-blue-100"
+      >
+        Using saved card
+      </button>
     </div>
   </div>
 </template>

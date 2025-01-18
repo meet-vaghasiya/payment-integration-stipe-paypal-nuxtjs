@@ -82,10 +82,13 @@ const decreaseQuantity = (product) => {
 };
 
 const checkoutWithStripe = async () => {
-  if (total.value <= 0) return;
+  if (total.value <= 0) {
+    alert('Kindly select product first');
+    return;
+  }
 
   try {
-    const { data } = await useFetch('/api/create-stripe-session', {
+    const { data, error } = await useFetch('/api/create-stripe-session', {
       method: 'POST',
       body: {
         total: total.value,
@@ -98,6 +101,11 @@ const checkoutWithStripe = async () => {
         })),
       },
     });
+    if (error.value) {
+      const errorMessage = error.value?.data?.message || 'Something went wrong';
+      alert(errorMessage);
+      return;
+    }
 
     if (data.value?.url) {
       window.location.href = data.value.url;
@@ -109,6 +117,10 @@ const checkoutWithStripe = async () => {
 
 const handleCustomCheckout = async () => {
   // create payment intent
+  if (!total.value) {
+    alert('Kindly select product first');
+    return;
+  }
   const paymentIntent = await createPaymentIntent(total.value, email.value);
   if (!paymentIntent?.clientSecret) {
     throw new Error('Failed to create payment intent');
@@ -116,7 +128,10 @@ const handleCustomCheckout = async () => {
   setClientSecret(paymentIntent.clientSecret);
   showCustomCheckout.value = true;
   await nextTick();
-  await initializeStripe(checkoutModalRef.value.cardElementRef);
+  await initializeStripe(
+    checkoutModalRef.value.cardElementRef,
+    checkoutModalRef.value.addressElementRef
+  );
 };
 
 const processCustomCheckout = async () => {
@@ -124,13 +139,7 @@ const processCustomCheckout = async () => {
 
   processing.value = true;
   try {
-    const { error, paymentIntent: confirmedPayment } = await confirmPayment({
-      card: elements.value.getElement('card'),
-      billing_details: {
-        name: cardName.value,
-        email: email.value,
-      },
-    });
+    const { error, paymentIntent: confirmedPayment } = await confirmPayment();
 
     if (error) throw new Error(error.message);
     if (confirmedPayment.status === 'succeeded') {
