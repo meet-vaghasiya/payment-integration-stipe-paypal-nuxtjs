@@ -16,7 +16,8 @@
       :items="cartItems"
       :total="total"
       @stripe-checkout="checkoutWithStripe"
-      @custom-checkout="handleCustomCheckout"
+      @custom-checkout="handleCustomCheckoutProcess"
+      @full-customize-checkout="handleFullyCustomCheckoutProcess"
     />
     <CheckoutModal
       v-model:show="showCustomCheckout"
@@ -30,6 +31,19 @@
       ref="checkoutModalRef"
       v-if="showCustomCheckout"
     />
+    <CheckoutFullyCustomizeCheckout
+      v-model:show="showFullyCustomCheckout"
+      v-model:cardName="cardName"
+      v-model:email="email"
+      :error="cardError"
+      :processing="processing"
+      :total="total"
+      @close="showFullyCustomCheckout = false"
+      @submit="processFullyCustomCheckout"
+      @full-customize-checkout="showFullyCustomCheckout = true"
+      ref="fullyCustomCheckoutRef"
+      v-if="showFullyCustomCheckout"
+    />
   </div>
 </template>
 
@@ -40,7 +54,9 @@ import { useStripe } from '~/composables/useStripe';
 
 const router = useRouter();
 const checkoutModalRef = ref(null);
+const fullyCustomCheckoutRef = ref(null);
 const showCustomCheckout = ref(false);
+const showFullyCustomCheckout = ref(false);
 const processing = ref(false);
 const cardName = ref('');
 const userStore = useUserStore();
@@ -50,9 +66,12 @@ const {
   cardError,
   initializeStripe,
   createPaymentIntent,
+  createCustomizedPaymentIntent,
   confirmPayment,
+  confirmCardPayment,
   elements,
   setClientSecret,
+  initializeStripeForFullyCustomCheckout,
 } = useStripe();
 
 // Products and Cart Logic
@@ -115,7 +134,7 @@ const checkoutWithStripe = async () => {
   }
 };
 
-const handleCustomCheckout = async () => {
+const handleCustomCheckoutProcess = async () => {
   // create payment intent
   if (!total.value) {
     alert('Kindly select product first');
@@ -126,12 +145,40 @@ const handleCustomCheckout = async () => {
     throw new Error('Failed to create payment intent');
   }
   setClientSecret(paymentIntent.clientSecret);
+
   showCustomCheckout.value = true;
+
   await nextTick();
   await initializeStripe(
     checkoutModalRef.value.cardElementRef,
     checkoutModalRef.value.addressElementRef
   );
+};
+
+const handleFullyCustomCheckoutProcess = async () => {
+  // create payment intent
+  if (!total.value) {
+    alert('Kindly select product first');
+    return;
+  }
+  const paymentIntent = await createCustomizedPaymentIntent(
+    total.value,
+    email.value
+  );
+  if (!paymentIntent?.clientSecret) {
+    throw new Error('Failed to create payment intent');
+  }
+  setClientSecret(paymentIntent.clientSecret);
+
+  showFullyCustomCheckout.value = true;
+
+  await nextTick();
+  await initializeStripeForFullyCustomCheckout({
+    cardEl: fullyCustomCheckoutRef.value.cardElementRef,
+    cardNumberEl: fullyCustomCheckoutRef.value.cardNumberElementRef,
+    cardExpiryEl: fullyCustomCheckoutRef.value.cardExpiryElementRef,
+    cardCvcEl: fullyCustomCheckoutRef.value.cardCvcElementRef,
+  });
 };
 
 const processCustomCheckout = async () => {
@@ -140,8 +187,28 @@ const processCustomCheckout = async () => {
   processing.value = true;
   try {
     const { error, paymentIntent: confirmedPayment } = await confirmPayment();
-
     if (error) throw new Error(error.message);
+
+    if (confirmedPayment.status === 'succeeded') {
+      alert('success');
+      showCustomCheckout.value = false;
+    }
+  } catch (error) {
+    cardError.value = error.message;
+  } finally {
+    processing.value = false;
+  }
+};
+
+const processFullyCustomCheckout = async () => {
+  if (processing.value) return;
+
+  processing.value = true;
+  try {
+    const { error, paymentIntent: confirmedPayment } =
+      await confirmCardPayment();
+    if (error) throw new Error(error.message);
+
     if (confirmedPayment.status === 'succeeded') {
       alert('success');
       showCustomCheckout.value = false;

@@ -26,8 +26,9 @@
       </button>
       <button
         class="flex-1 mt-4 bg-blue-200 text-black py-2 px-4 rounded hover:bg-blue-100"
+        @click="emit('full-customize-checkout')"
       >
-        Creating seprate components
+        Fully Customized Checkout
       </button>
       <button
         class="flex-1 mt-4 bg-blue-200 text-black py-2 px-4 rounded hover:bg-blue-100"
@@ -50,5 +51,9 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['stripe-checkout', 'custom-checkout']);
+const emit = defineEmits([
+  'stripe-checkout',
+  'custom-checkout',
+  'full-customize-checkout',
+]);
 </script>

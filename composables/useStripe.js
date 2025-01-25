@@ -59,6 +59,63 @@ export function useStripe() {
     return { card, elements: elements.value };
   };
 
+  const initializeStripeForFullyCustomCheckout = async ({
+    cardEl,
+    cardNumberEl,
+    cardExpiryEl,
+    cardCvcEl,
+  }) => {
+    stripe.value = await loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+    // Initialize Elements with custom styles
+    const customStyle = {
+      base: {
+        color: '#3b82f6', // Text color (blue)
+        fontFamily: '"Helvetica Neue", Helvetica, sans-serif', // Font family
+        fontSmoothing: 'antialiased', // Font smoothing
+        fontSize: '16px', // Font size
+        '::placeholder': {
+          color: '#93c5fd', // Placeholder color (lighter blue)
+        },
+        borderColor: '#3b82f6', // Border color (blue)
+        border: '1px solid #3b82f6', // Border style
+      },
+      invalid: {
+        color: '#fa755a', // Text color for invalid input
+        iconColor: '#fa755a', // Icon color for invalid input
+      },
+    };
+
+    elements.value = stripe.value.elements({
+      clientSecret: clientSecret.value,
+    });
+
+    // https://docs.stripe.com/js/elements_object/create_element?type=cardNumber
+    const cardNumberElement = elements.value.create('cardNumber', {
+      style: customStyle,
+    });
+    const cardExpiryElement = elements.value.create('cardExpiry', {
+      style: customStyle,
+    });
+    const cardCvcElement = elements.value.create('cardCvc', {
+      style: customStyle,
+    });
+
+    cardNumberElement.mount(cardNumberEl);
+    cardExpiryElement.mount(cardExpiryEl);
+    cardCvcElement.mount(cardCvcEl);
+
+    cardNumberElement.addEventListener('change', (event) => {
+      cardError.value = event.error ? event.error.message : '';
+    });
+    cardExpiryElement.addEventListener('change', (event) => {
+      cardError.value = event.error ? event.error.message : '';
+    });
+    cardCvcElement.addEventListener('change', (event) => {
+      cardError.value = event.error ? event.error.message : '';
+    });
+
+    return { cardNumberElement, cardExpiryElement, cardCvcElement };
+  };
   const createPaymentIntent = async (amount, email) => {
     const { data } = await useFetch('/api/create-payment-intent', {
       method: 'POST',
@@ -68,6 +125,21 @@ export function useStripe() {
         email,
       },
     });
+    return data.value;
+  };
+
+  const createCustomizedPaymentIntent = async (amount, email) => {
+    const { data } = await useFetch(
+      '/api/create-payment-intent-for-full-customize',
+      {
+        method: 'POST',
+        body: {
+          amount: Math.round(amount * 100),
+          currency: 'usd',
+          email,
+        },
+      }
+    );
     return data.value;
   };
 
@@ -83,6 +155,16 @@ export function useStripe() {
       ...params, // Pass any additional parameters
     });
   };
+  const confirmCardPayment = async (params) => {
+    return await stripe.value.confirmCardPayment(clientSecret.value, {
+      payment_method: {
+        card: elements.value.getElement('cardNumber'),
+        billing_details: {
+          name: 'Test Name',
+        },
+      },
+    });
+  };
 
   return {
     stripe,
@@ -90,7 +172,10 @@ export function useStripe() {
     cardError,
     initializeStripe,
     createPaymentIntent,
+    createCustomizedPaymentIntent,
     confirmPayment,
     setClientSecret,
+    initializeStripeForFullyCustomCheckout,
+    confirmCardPayment,
   };
 }
